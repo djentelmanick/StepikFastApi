@@ -1,6 +1,7 @@
-from fastapi import FastAPI
-from app.logger import logger
 from app.config import load_config
+from app.logger import logger
+from fastapi import FastAPI
+
 
 app = FastAPI()
 # config = load_config("./.env")

@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List
+
+
+# from typing import List
 
 
 app = FastAPI()
@@ -55,11 +57,12 @@ class Num(BaseModel):
 #     return {"result": sum(nums)}
 # curl -X POST "http://localhost:8000/calculate" -H "Content-Type: application/json" -d "[5, 10, 11]"
 
+
 class Summation(BaseModel):
     number1: int = 0
     number2: int = 0
 
 
 @app.post("/calculate")
-async def calculate(nums: Summation):
+async def post_calculate(nums: Summation):
     return {"result": nums.number1 + nums.number2}

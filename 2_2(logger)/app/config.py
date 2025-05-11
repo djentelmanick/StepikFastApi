@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from environs import Env
 
 
@@ -21,5 +22,9 @@ def load_config(path: str = None) -> Config:
     return Config(
         db=DatabaseConfig(database_url=env("DATABASE_URL")),
         secret_key=env("SECRET_KEY"),
-        debug=env.bool("DEBUG", default=False)
+        debug=env.bool("DEBUG", default=False),
     )
+
+
+# conf = Config(db='dp_config', secret_key='secret', debug=True)
+# print(conf)
