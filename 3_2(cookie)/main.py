@@ -21,9 +21,7 @@ async def login(data: LoginRequest, response: Response):
     session_data = LoginRequest(username=data.username, password=hashed_password)
     redis_client.setex(session_token, 86400, session_data.model_dump_json())
 
-    response.set_cookie(
-        key="session_token", value=session_token, httponly=True, max_age=86400
-    )
+    response.set_cookie(key="session_token", value=session_token, httponly=True, max_age=86400)
     return {"message": "Cookie has been set"}
 
 
