@@ -1,10 +1,11 @@
 from babel import Locale
 from babel.core import UnknownLocaleError
-from pydantic import BaseModel, field_validator
 from fastapi import HTTPException, status
+from pydantic import BaseModel, field_validator
 
 
 MINIMUM_APP_VERSION = "1.100.500"
+
 
 class CommonHeaders(BaseModel):
     user_agent: str
@@ -23,7 +24,7 @@ class CommonHeaders(BaseModel):
         except Exception as e:
             raise ValueError(f"Invalid Accept-Language format: {str(e)}")
         return v
-    
+
     @field_validator("x_current_version")
     def validate_x_current_version(cls, v):
         for min_version, input_version in zip(MINIMUM_APP_VERSION.split("."), v.split(".")):
@@ -32,6 +33,6 @@ class CommonHeaders(BaseModel):
             if int(min_version) > int(input_version):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Minimum app version is {MINIMUM_APP_VERSION}. Your version: {v}"
+                    detail=f"Minimum app version is {MINIMUM_APP_VERSION}. Your version: {v}",
                 )
         return v

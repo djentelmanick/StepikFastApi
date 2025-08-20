@@ -1,14 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import jwt
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
-import secrets
 
-from sqlalchemy.orm import Session
-
+import jwt
 from app.dataclasses import models
 from app.db.session_local import session_local
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
 
 app = FastAPI()
 
@@ -39,8 +38,7 @@ def get_password_hash(password):
 
 
 def get_user(username: str, db: Session = Depends(get_db)):
-    return (db.query(models.User)
-            .filter(models.User.username == username).first())
+    return db.query(models.User).filter(models.User.username == username).first()
 
 
 def authenticate_user(db, username: str, password: str):
@@ -64,7 +62,11 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     password = form_data.password
 
     if not authenticate_user(db, username, password):
-        raise HTTPException(status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     access_token = create_access_token(data={"sub": username})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -78,8 +80,16 @@ async def protected_resource(token: str = Depends(oauth2_scheme)):
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=401,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except jwt.DecodeError:
-        raise HTTPException(status_code=401, detail="Invalid token", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     return {"message": "Access granted to protected resource"}

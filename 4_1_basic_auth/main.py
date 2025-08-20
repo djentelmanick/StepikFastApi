@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
+
 app = FastAPI()
 security = HTTPBasic()
 
@@ -14,8 +15,8 @@ class User(BaseModel):
 
 
 USERS = {
-    'user1': User(username='user1', password='pass1'),
-    'user2': User(username='user2', password='pass2')
+    "user1": User(username="user1", password="pass1"),
+    "user2": User(username="user2", password="pass2"),
 }
 
 
@@ -25,12 +26,12 @@ def auth_user(creds: HTTPBasicCredentials = Depends(security)):
         return user
 
     raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password",
+        headers={"WWW-Authenticate": "Basic"},
+    )
 
 
-@app.get('/login', dependencies=[Depends(auth_user)])
+@app.get("/login", dependencies=[Depends(auth_user)])
 async def auth():
-    return 'You got my secret, welcome'
+    return "You got my secret, welcome"
