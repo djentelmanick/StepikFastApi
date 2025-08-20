@@ -8,21 +8,15 @@ from utils import get_common_headers
 app = FastAPI()
 
 
-@app.get("/headers")
+@app.get("/headers", tags=["headers"])
 async def get_headers(headers: CommonHeaders = Depends(get_common_headers)):
-    return {
-        "User-Agent": headers.user_agent,
-        "Accept-Language": headers.accept_language,
-    }
+    return headers
 
 
-@app.get("/info")
+@app.get("/info", tags=["info"])
 async def read_info(response: Response, headers: CommonHeaders = Depends(get_common_headers)):
     response.headers["X-Server-Time"] = datetime.now().isoformat()
     return {
         "message": "Добро пожаловать! Ваши заголовки успешно обработаны.",
-        "headers": {
-            "User-Agent": headers.user_agent,
-            "Accept-Language": headers.accept_language,
-        },
+        "headers": headers,
     }
