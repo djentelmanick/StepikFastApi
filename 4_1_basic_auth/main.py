@@ -1,37 +1,24 @@
-from secrets import compare_digest as safe_comp
-
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic import BaseModel
+from crypt_context import pwd_context
+from db import fake_users_db
+from fastapi import Depends, FastAPI
+from schemas import User, UserInDB
+from utils import auth_user
 
 
 app = FastAPI()
-security = HTTPBasic()
 
 
-class User(BaseModel):
-    username: str
-    password: str
+@app.get("/login", tags=["User"])
+async def auth(user: User = Depends(auth_user)):
+    return "You got my secret, %s. Welcome!" % user.username
 
 
-USERS = {
-    "user1": User(username="user1", password="pass1"),
-    "user2": User(username="user2", password="pass2"),
-}
+@app.post("/rigister", tags=["User"])
+async def register(user: User):
+    for user_db in fake_users_db:
+        if user_db.username == user.username:
+            return "User already exists"
 
-
-def auth_user(creds: HTTPBasicCredentials = Depends(security)):
-    user = USERS.get(creds.username)
-    if user and safe_comp(user.password, creds.password):
-        return user
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect username or password",
-        headers={"WWW-Authenticate": "Basic"},
-    )
-
-
-@app.get("/login", dependencies=[Depends(auth_user)])
-async def auth():
-    return "You got my secret, welcome"
+    hashed_password = pwd_context.hash(user.password)
+    fake_users_db.append(UserInDB(username=user.username, hashed_password=hashed_password))
+    return "%s, you successfully registered!" % user.username
