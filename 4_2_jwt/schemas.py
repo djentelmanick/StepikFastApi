@@ -11,3 +11,7 @@ class User(UserBase):
 
 class UserInDB(UserBase):
     hashed_password: str
+
+
+class Token(BaseModel):
+    refresh_token: str
