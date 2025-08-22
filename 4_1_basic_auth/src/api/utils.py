@@ -1,10 +1,10 @@
 from secrets import compare_digest
 
-from config import config
-from crypt_context import pwd_context
-from db import fake_users_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from src.api.crypt_context import pwd_context
+from src.api.db import fake_users_db
+from src.core.config import config
 
 
 security = HTTPBasic()

@@ -1,12 +1,12 @@
-from config import config
-from crypt_context import pwd_context
-from db import fake_users_db
 from fastapi import Depends, FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from logger import LoggerConfig
-from schemas import User, UserInDB
-from utils import auth_user, verify_docs_credentials
+from src.api.crypt_context import pwd_context
+from src.api.db import fake_users_db
+from src.api.schemas import User, UserInDB
+from src.api.utils import auth_user, verify_docs_credentials
+from src.core.config import config
+from src.core.logger import LoggerConfig
 
 
 LoggerConfig.setup()
@@ -20,7 +20,7 @@ async def auth(user: User = Depends(auth_user)):
     return "You got my secret, %s. Welcome!" % user.username
 
 
-@app.post("/rigister", tags=["User"])
+@app.post("/register", tags=["User"])
 async def register(user: User):
     for user_db in fake_users_db:
         if user_db.username == user.username:

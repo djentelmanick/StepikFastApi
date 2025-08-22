@@ -1,5 +1,5 @@
-from crypt_context import pwd_context
-from schemas import UserInDB
+from src.api.crypt_context import pwd_context
+from src.api.schemas import UserInDB
 
 
 fake_users_db = [
