@@ -1,95 +1,36 @@
-from datetime import datetime, timedelta
+from crypt_context import get_password_hash
+from db import add_user
+from fastapi import Depends, FastAPI, Request, Response, status
+from schemas import User, UserInDB
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from utils import auth_user, create_access_token, get_user_from_token
 
-import jwt
-from app.dataclasses import models
-from app.db.session_local import session_local
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 
-
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-def get_db():
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
+@app.post("/login", tags=["User"])
+@limiter.limit("5/minute")
+async def login(request: Request, user: User = Depends(auth_user)):
+    return {
+        "access_token": create_access_token(data={"sub": user.username}),
+        "token_type": "bearer",
+    }
 
 
-SECRET_KEY = "dba749b064fa8502475b7bd8b31b81d2cb20a34fbfee762ba4ba9c09093c799a"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+@app.get("/protected_resource", tags=["User"])
+async def protected_resource(username: str = Depends(get_user_from_token)):
+    return {"message": f"Hello, {username}! Your token is valid"}
 
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def get_user(username: str, db: Session = Depends(get_db)):
-    return db.query(models.User).filter(models.User.username == username).first()
-
-
-def authenticate_user(db, username: str, password: str):
-    user = get_user(username, db)
-    if not user or not verify_password(password, user.password):
-        return False
-    return True
-
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-@app.post("/login")
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
-    username = form_data.username
-    password = form_data.password
-
-    if not authenticate_user(db, username, password):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token = create_access_token(data={"sub": username})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/protected_resource")
-async def protected_resource(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=401,
-            detail="Token has expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except jwt.DecodeError:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return {"message": "Access granted to protected resource"}
+@app.post("/register", tags=["User"])
+@limiter.limit("1/minute")
+async def register(request: Request, user: User, response: Response):
+    add_user(UserInDB(username=user.username, hashed_password=get_password_hash(user.password)))
+    response.status_code = status.HTTP_201_CREATED
+    return {"message": "User created successfully"}
